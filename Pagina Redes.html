@@ -1,0 +1,1431 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Subnetting Quest</title>
+<link href="https://fonts.googleapis.com/css2?family=Press+Start+2P&family=Orbitron:wght@400;700;900&family=Share+Tech+Mono&display=swap" rel="stylesheet">
+<style>
+  :root {
+    /* Tema claro "arcade de día" */
+    --bg:      #f0f2ff;
+    --bg2:     #e8eaf8;
+    --panel:   #ffffff;
+    --panel2:  #f7f8ff;
+    --border:  #c8cce8;
+    --border2: #a0a8d8;
+
+    /* Acentos vibrantes — suficiente contraste sobre fondo claro */
+    --indigo:  #3730a3;
+    --indigo2: #4f46e5;
+    --cyan:    #0284c7;
+    --cyan2:   #0369a1;
+    --green:   #15803d;
+    --green2:  #16a34a;
+    --pink:    #be185d;
+    --pink2:   #9d174d;
+    --orange:  #c2410c;
+    --gold:    #92400e;
+    --gold2:   #b45309;
+
+    /* Texto */
+    --text:    #1e1b4b;
+    --text2:   #374151;
+    --muted:   #6b7280;
+    --white:   #ffffff;
+  }
+
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+
+  body {
+    font-family: 'Share Tech Mono', monospace;
+    background-color: var(--bg);
+    color: var(--text);
+    min-height: 100vh;
+    background-image:
+      linear-gradient(rgba(79,70,229,0.06) 1px, transparent 1px),
+      linear-gradient(90deg, rgba(79,70,229,0.06) 1px, transparent 1px);
+    background-size: 40px 40px;
+  }
+
+  /* Franja decorativa superior */
+  body::before {
+    content: '';
+    display: block;
+    height: 5px;
+    background: linear-gradient(90deg, var(--indigo2), var(--cyan), var(--green2), var(--pink), var(--gold2));
+    position: fixed;
+    top: 0; left: 0; right: 0;
+    z-index: 100;
+  }
+
+  .container {
+    max-width: 1100px;
+    margin: 0 auto;
+    padding: 1rem 1rem 2rem;
+    position: relative;
+  }
+
+  /* ── HEADER ── */
+  header {
+    text-align: center;
+    padding: 2.5rem 1rem 1.5rem;
+  }
+
+  .game-title {
+    font-family: 'Press Start 2P', monospace;
+    font-size: clamp(1.4rem, 5vw, 3rem);
+    color: var(--indigo2);
+    text-shadow: 3px 3px 0 rgba(79,70,229,0.2);
+    letter-spacing: 0.05em;
+    line-height: 1.3;
+    animation: titlePulse 3s ease-in-out infinite;
+  }
+
+  .game-title .accent { color: var(--cyan); }
+
+  @keyframes titlePulse {
+    0%,100% { text-shadow: 3px 3px 0 rgba(79,70,229,0.2); }
+    50%      { text-shadow: 3px 3px 0 rgba(79,70,229,0.35), 0 0 30px rgba(79,70,229,0.15); }
+  }
+
+  .subtitle {
+    font-family: 'Orbitron', sans-serif;
+    font-size: clamp(0.65rem, 2.2vw, 0.95rem);
+    color: var(--muted);
+    margin-top: 0.75rem;
+    letter-spacing: 0.15em;
+    text-transform: uppercase;
+  }
+
+  /* ── XP BAR ── */
+  .xp-wrap {
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+    justify-content: center;
+    margin: 1rem 0 0;
+    flex-wrap: wrap;
+  }
+
+  .xp-label {
+    font-family: 'Press Start 2P', monospace;
+    font-size: 0.55rem;
+    color: var(--green);
+  }
+
+  .xp-bar {
+    width: 220px;
+    height: 14px;
+    background: #e5e7eb;
+    border: 2px solid var(--green2);
+    border-radius: 3px;
+    overflow: hidden;
+  }
+
+  .xp-fill {
+    height: 100%;
+    background: linear-gradient(90deg, var(--green2), #22c55e);
+    width: 25%;
+    transition: width 0.6s cubic-bezier(0.34,1.56,0.64,1);
+  }
+
+  /* ── NAV ── */
+  nav {
+    display: flex;
+    gap: 0.5rem;
+    flex-wrap: wrap;
+    justify-content: center;
+    padding: 1rem 0;
+    border-top: 2px solid var(--border);
+    border-bottom: 2px solid var(--border);
+    margin-bottom: 1.5rem;
+    background: var(--panel);
+    border-radius: 8px;
+    box-shadow: 0 2px 8px rgba(79,70,229,0.07);
+  }
+
+  .nav-btn {
+    font-family: 'Press Start 2P', monospace;
+    font-size: clamp(0.42rem, 1.6vw, 0.62rem);
+    padding: 0.7rem 1.2rem;
+    background: var(--bg2);
+    color: var(--muted);
+    border: 2px solid var(--border);
+    border-radius: 5px;
+    cursor: pointer;
+    transition: all 0.15s ease;
+    letter-spacing: 0.04em;
+    line-height: 1.6;
+  }
+
+  .nav-btn:hover {
+    border-color: var(--indigo2);
+    color: var(--indigo2);
+    background: rgba(79,70,229,0.07);
+  }
+
+  .nav-btn.active {
+    background: var(--indigo2);
+    color: var(--white);
+    border-color: var(--indigo);
+    box-shadow: 0 2px 10px rgba(79,70,229,0.35);
+  }
+
+  .nav-btn.gold-btn { border-color: var(--gold2); color: var(--gold2); }
+  .nav-btn.gold-btn:hover, .nav-btn.gold-btn.active {
+    background: var(--gold2);
+    color: var(--white);
+    border-color: var(--gold);
+    box-shadow: 0 2px 10px rgba(180,83,9,0.35);
+  }
+
+  /* ── STAGES ── */
+  .stage { display: none; }
+  .stage.active { display: block; animation: fadeIn 0.3s ease; }
+
+  @keyframes fadeIn {
+    from { opacity: 0; transform: translateY(10px); }
+    to   { opacity: 1; transform: translateY(0); }
+  }
+
+  /* ── PANELS ── */
+  .panel {
+    background: var(--panel);
+    border: 2px solid var(--border);
+    border-radius: 8px;
+    padding: 1.5rem;
+    margin-bottom: 1rem;
+    box-shadow: 0 2px 12px rgba(0,0,0,0.06);
+  }
+
+  .panel-indigo { border-color: var(--indigo2); box-shadow: 0 2px 16px rgba(79,70,229,0.1); }
+  .panel-cyan   { border-color: var(--cyan);    box-shadow: 0 2px 16px rgba(2,132,199,0.1); }
+  .panel-gold   { border-color: var(--gold2);   box-shadow: 0 2px 16px rgba(180,83,9,0.1); }
+  .panel-pink   { border-color: var(--pink);    box-shadow: 0 2px 16px rgba(190,24,93,0.1); }
+  .panel-green  { border-color: var(--green2);  box-shadow: 0 2px 16px rgba(22,163,74,0.1); }
+  .panel-purple { border-color: #7c3aed;        box-shadow: 0 2px 16px rgba(124,58,237,0.1); }
+
+  /* ── SECTION TITLE ── */
+  .section-title {
+    font-family: 'Press Start 2P', monospace;
+    font-size: clamp(0.65rem, 2.2vw, 0.95rem);
+    margin-bottom: 1rem;
+    display: flex;
+    align-items: center;
+    gap: 0.6rem;
+    line-height: 1.6;
+  }
+
+  .section-title.indigo { color: var(--indigo2); }
+  .section-title.cyan   { color: var(--cyan); }
+  .section-title.gold   { color: var(--gold2); }
+  .section-title.green  { color: var(--green); }
+  .section-title.pink   { color: var(--pink); }
+  .section-title.orange { color: var(--orange); }
+  .section-title.purple { color: #7c3aed; }
+
+  /* ── BADGES ── */
+  .badge {
+    font-family: 'Press Start 2P', monospace;
+    font-size: clamp(0.42rem, 1.3vw, 0.56rem);
+    padding: 0.25rem 0.55rem;
+    border-radius: 3px;
+    display: inline-block;
+    line-height: 1.6;
+  }
+
+  .badge-indigo { background: rgba(79,70,229,0.12);  color: var(--indigo);  border: 1px solid var(--indigo2); }
+  .badge-cyan   { background: rgba(2,132,199,0.12);  color: var(--cyan2);   border: 1px solid var(--cyan); }
+  .badge-gold   { background: rgba(180,83,9,0.12);   color: var(--gold);    border: 1px solid var(--gold2); }
+  .badge-green  { background: rgba(22,163,74,0.12);  color: var(--green);   border: 1px solid var(--green2); }
+  .badge-pink   { background: rgba(190,24,93,0.12);  color: var(--pink2);   border: 1px solid var(--pink); }
+  .badge-orange { background: rgba(194,65,12,0.12);  color: var(--orange);  border: 1px solid var(--orange); }
+
+  /* ── BODY TEXT ── */
+  .body-text {
+    font-size: clamp(0.88rem, 2.5vw, 1.05rem);
+    line-height: 1.85;
+    color: var(--text2);
+  }
+
+  /* ── IP TAGS ── */
+  .ip-tag {
+    font-family: 'Share Tech Mono', monospace;
+    font-size: clamp(0.95rem, 2.8vw, 1.25rem);
+    color: var(--cyan2);
+    background: rgba(2,132,199,0.09);
+    border: 1px solid var(--cyan);
+    padding: 0.15rem 0.55rem;
+    border-radius: 3px;
+    display: inline-block;
+  }
+
+  .ip-tag.indigo { color: var(--indigo);  background: rgba(79,70,229,0.09);  border-color: var(--indigo2); }
+  .ip-tag.green  { color: var(--green);   background: rgba(22,163,74,0.09);  border-color: var(--green2); }
+  .ip-tag.pink   { color: var(--pink2);   background: rgba(190,24,93,0.09);  border-color: var(--pink); }
+  .ip-tag.gold   { color: var(--gold);    background: rgba(180,83,9,0.09);   border-color: var(--gold2); }
+
+  /* ── BIG FORMULA ── */
+  .big-formula {
+    font-family: 'Orbitron', sans-serif;
+    font-size: clamp(2.2rem, 6vw, 3.8rem);
+    font-weight: 900;
+    text-align: center;
+    padding: 1rem;
+    background: var(--bg2);
+    border-radius: 6px;
+    margin: 0.75rem 0;
+    border: 2px solid var(--border);
+  }
+
+  .formula-box {
+    font-family: 'Orbitron', sans-serif;
+    font-size: clamp(1.8rem, 5vw, 2.8rem);
+    font-weight: 900;
+    text-align: center;
+    padding: 1rem;
+    background: var(--bg2);
+    border-radius: 5px;
+    margin: 0.75rem 0;
+    border: 2px solid var(--border);
+  }
+
+  /* ── GRIDS ── */
+  .grid-2 {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(min(100%, 300px), 1fr));
+    gap: 1rem;
+  }
+
+  /* ── SLIDER ── */
+  input[type=range] {
+    -webkit-appearance: none;
+    width: 100%;
+    height: 8px;
+    background: var(--bg2);
+    border: 1px solid var(--border2);
+    border-radius: 4px;
+    outline: none;
+    cursor: pointer;
+  }
+
+  input[type=range]::-webkit-slider-thumb {
+    -webkit-appearance: none;
+    width: 30px;
+    height: 30px;
+    background: var(--indigo2);
+    border-radius: 50%;
+    cursor: pointer;
+    border: 3px solid var(--white);
+    box-shadow: 0 2px 8px rgba(79,70,229,0.4);
+  }
+
+  .slider-display {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 0.75rem;
+    margin-top: 0.75rem;
+  }
+
+  .stat-box {
+    background: var(--bg2);
+    border: 2px solid var(--border);
+    border-radius: 5px;
+    padding: 0.9rem;
+    text-align: center;
+  }
+
+  .stat-label {
+    font-family: 'Press Start 2P', monospace;
+    font-size: 0.47rem;
+    color: var(--muted);
+    display: block;
+    margin-bottom: 0.4rem;
+    line-height: 1.6;
+  }
+
+  .stat-value {
+    font-family: 'Orbitron', sans-serif;
+    font-size: clamp(1.8rem, 5vw, 2.6rem);
+    font-weight: 900;
+    line-height: 1;
+  }
+
+  /* ── QUICK POWERS ── */
+  .powers-wrap {
+    display: flex;
+    gap: 0.4rem;
+    flex-wrap: wrap;
+    margin-top: 0.5rem;
+  }
+
+  /* ── QUEST STEPS ── */
+  .quest-step {
+    background: var(--panel2);
+    border: 2px solid var(--border);
+    border-radius: 6px;
+    padding: 1.1rem 1.25rem;
+    margin-bottom: 0.75rem;
+  }
+
+  .step-header {
+    display: flex;
+    align-items: flex-start;
+    gap: 0.75rem;
+    margin-bottom: 0.75rem;
+  }
+
+  .step-num {
+    font-family: 'Press Start 2P', monospace;
+    font-size: 0.6rem;
+    width: 36px;
+    height: 36px;
+    min-width: 36px;
+    background: rgba(79,70,229,0.1);
+    border: 2px solid var(--indigo2);
+    border-radius: 4px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: var(--indigo2);
+    line-height: 1;
+  }
+
+  .step-num.gold   { background: rgba(180,83,9,0.1);  border-color: var(--gold2);  color: var(--gold); }
+  .step-num.pink   { background: rgba(190,24,93,0.1); border-color: var(--pink);   color: var(--pink2); }
+  .step-num.orange { background: rgba(194,65,12,0.1); border-color: var(--orange); color: var(--orange); }
+
+  .step-title {
+    font-family: 'Orbitron', sans-serif;
+    font-size: clamp(0.78rem, 2.4vw, 1rem);
+    font-weight: 700;
+    color: var(--text);
+  }
+
+  /* ── BUTTONS ── */
+  .btn {
+    font-family: 'Press Start 2P', monospace;
+    font-size: clamp(0.48rem, 1.7vw, 0.65rem);
+    padding: 0.75rem 1.4rem;
+    border: 2px solid;
+    border-radius: 5px;
+    cursor: pointer;
+    transition: all 0.15s ease;
+    letter-spacing: 0.04em;
+    line-height: 1.5;
+    display: inline-block;
+  }
+
+  .btn-indigo {
+    background: var(--indigo2);
+    color: var(--white);
+    border-color: var(--indigo);
+  }
+
+  .btn-indigo:hover {
+    background: var(--indigo);
+    box-shadow: 0 4px 14px rgba(79,70,229,0.35);
+    transform: translateY(-1px);
+  }
+
+  .btn-cyan {
+    background: var(--cyan);
+    color: var(--white);
+    border-color: var(--cyan2);
+  }
+
+  .btn-cyan:hover {
+    background: var(--cyan2);
+    box-shadow: 0 4px 14px rgba(2,132,199,0.35);
+    transform: translateY(-1px);
+  }
+
+  .btn-gold {
+    background: var(--gold2);
+    color: var(--white);
+    border-color: var(--gold);
+  }
+
+  .btn-gold:hover {
+    background: var(--gold);
+    box-shadow: 0 4px 14px rgba(180,83,9,0.35);
+    transform: translateY(-1px);
+  }
+
+  .btn-orange {
+    background: var(--orange);
+    color: var(--white);
+    border-color: #9a3412;
+  }
+
+  .btn-orange:hover {
+    background: #9a3412;
+    box-shadow: 0 4px 14px rgba(194,65,12,0.35);
+    transform: translateY(-1px);
+  }
+
+  .btn-green {
+    background: var(--green2);
+    color: var(--white);
+    border-color: var(--green);
+  }
+
+  .btn-green:hover {
+    background: var(--green);
+    box-shadow: 0 4px 14px rgba(22,163,74,0.35);
+    transform: translateY(-1px);
+  }
+
+  .btn-reset {
+    background: transparent;
+    color: var(--muted);
+    border-color: var(--border2);
+    font-size: 0.46rem;
+  }
+
+  .btn-reset:hover {
+    color: var(--text);
+    border-color: var(--text2);
+  }
+
+  /* ── ANSWER BOXES ── */
+  .answer-box {
+    display: none;
+    margin-top: 0.75rem;
+    background: rgba(22,163,74,0.06);
+    border: 2px solid var(--green2);
+    border-radius: 5px;
+    padding: 1.1rem 1.25rem;
+  }
+
+  .answer-box.visible { display: block; animation: fadeIn 0.3s ease; }
+
+  .answer-label {
+    font-family: 'Press Start 2P', monospace;
+    font-size: 0.5rem;
+    color: var(--green);
+    margin-bottom: 0.5rem;
+    display: block;
+    letter-spacing: 0.08em;
+  }
+
+  .answer-text {
+    font-size: clamp(0.88rem, 2.5vw, 1.05rem);
+    color: var(--text2);
+    line-height: 1.85;
+  }
+
+  .answer-highlight {
+    font-family: 'Orbitron', sans-serif;
+    font-size: clamp(1.2rem, 3.5vw, 1.7rem);
+    font-weight: 900;
+    color: var(--green);
+  }
+
+  /* ── PROBLEM BOX ── */
+  .problem-box {
+    background: var(--bg2);
+    border-left: 5px solid;
+    padding: 1.1rem 1.4rem;
+    border-radius: 0 5px 5px 0;
+    margin-bottom: 1.1rem;
+  }
+
+  .problem-box.cyan   { border-color: var(--cyan); }
+  .problem-box.pink   { border-color: var(--pink); }
+  .problem-box.indigo { border-color: var(--indigo2); }
+
+  .problem-title {
+    font-family: 'Press Start 2P', monospace;
+    font-size: 0.5rem;
+    color: var(--muted);
+    letter-spacing: 0.15em;
+    margin-bottom: 0.65rem;
+  }
+
+  /* ── RESULT PANEL ── */
+  .result-panel {
+    background: var(--bg2);
+    border: 3px solid var(--gold2);
+    border-radius: 8px;
+    padding: 1.5rem;
+    margin-top: 1rem;
+    box-shadow: 0 4px 20px rgba(180,83,9,0.12);
+    display: none;
+  }
+
+  .result-panel.visible { display: block; animation: fadeIn 0.4s ease; }
+
+  .result-title {
+    font-family: 'Press Start 2P', monospace;
+    font-size: clamp(0.55rem, 1.8vw, 0.82rem);
+    color: var(--gold);
+    text-align: center;
+    margin-bottom: 1.1rem;
+    letter-spacing: 0.08em;
+    line-height: 1.8;
+  }
+
+  /* ── RESULT TABLE ── */
+  .table-wrap { overflow-x: auto; }
+
+  .result-table {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: clamp(0.72rem, 2vw, 0.9rem);
+  }
+
+  .result-table th {
+    font-family: 'Press Start 2P', monospace;
+    font-size: clamp(0.38rem, 1.2vw, 0.52rem);
+    color: var(--text);
+    background: var(--border);
+    padding: 0.7rem 0.6rem;
+    text-align: left;
+    border-bottom: 2px solid var(--border2);
+    letter-spacing: 0.04em;
+    white-space: nowrap;
+  }
+
+  .result-table td {
+    padding: 0.65rem 0.6rem;
+    border-bottom: 1px solid var(--border);
+    font-family: 'Share Tech Mono', monospace;
+    white-space: nowrap;
+    background: var(--panel);
+  }
+
+  .result-table tr:nth-child(even) td { background: var(--bg2); }
+  .result-table tr:last-child td { border-bottom: none; }
+
+  .td-net  { color: var(--cyan2);  font-weight: bold; }
+  .td-bc   { color: var(--pink2); }
+  .td-mask { color: var(--gold2); font-weight: bold; }
+  .td-zone { color: var(--muted); }
+
+  /* ── WARNING PANEL ── */
+  .warning-panel {
+    background: rgba(194,65,12,0.07);
+    border: 2px solid var(--orange);
+    border-radius: 5px;
+    padding: 0.9rem 1.1rem;
+    margin: 0.75rem 0;
+  }
+
+  /* ── ORDER CHAIN ── */
+  .order-chain {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    flex-wrap: wrap;
+    margin: 0.75rem 0;
+  }
+
+  .order-box {
+    font-family: 'Orbitron', sans-serif;
+    font-size: clamp(1rem, 3vw, 1.5rem);
+    font-weight: 900;
+    padding: 0.45rem 0.9rem;
+    background: rgba(22,163,74,0.1);
+    border: 2px solid var(--green2);
+    border-radius: 4px;
+    color: var(--green);
+  }
+
+  .order-arrow { color: var(--green2); font-size: 1.2rem; }
+
+  /* ── POWER CARD (inner) ── */
+  .power-card {
+    background: var(--bg2);
+    border: 1px solid var(--border2);
+    border-radius: 5px;
+    padding: 1rem 1.1rem;
+    margin-bottom: 0.6rem;
+  }
+
+  /* ── PILLAR CARDS ── */
+  .pillar {
+    background: var(--panel);
+    border: 2px solid var(--border);
+    border-radius: 7px;
+    padding: 1.25rem;
+    transition: border-color 0.2s, box-shadow 0.2s;
+  }
+
+  .pillar:hover {
+    border-color: var(--indigo2);
+    box-shadow: 0 4px 16px rgba(79,70,229,0.12);
+  }
+
+  .pillar-num {
+    font-family: 'Press Start 2P', monospace;
+    font-size: 0.85rem;
+    width: 40px;
+    height: 40px;
+    border-radius: 4px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    margin-bottom: 0.75rem;
+    border: 2px solid;
+  }
+
+  .pillar-h {
+    font-family: 'Orbitron', sans-serif;
+    font-size: clamp(0.88rem, 2.5vw, 1.05rem);
+    font-weight: 700;
+    margin-bottom: 0.6rem;
+    color: var(--text);
+  }
+
+  .pillar-text {
+    font-size: clamp(0.82rem, 2.2vw, 0.96rem);
+    line-height: 1.85;
+    color: var(--text2);
+  }
+
+  /* ── QUEST HEADER ── */
+  .quest-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-start;
+    gap: 1rem;
+    margin-bottom: 1.1rem;
+    flex-wrap: wrap;
+  }
+
+  /* ── HIDDEN STEPS ── */
+  .hidden-step { display: none; }
+  .hidden-step.revealed { display: block; animation: fadeIn 0.3s ease; }
+
+  /* ── XP TOAST ── */
+  .xp-toast {
+    position: fixed;
+    top: 24px;
+    right: 20px;
+    font-family: 'Press Start 2P', monospace;
+    font-size: 0.6rem;
+    background: var(--green2);
+    color: var(--white);
+    padding: 0.65rem 1.1rem;
+    border-radius: 5px;
+    z-index: 200;
+    pointer-events: none;
+    opacity: 0;
+    transform: translateY(-8px);
+    transition: all 0.25s ease;
+    box-shadow: 0 4px 16px rgba(22,163,74,0.4);
+  }
+
+  .xp-toast.show { opacity: 1; transform: translateY(0); }
+
+  /* ── BLINK ── */
+  .blink { animation: blink 1s step-end infinite; }
+  @keyframes blink { 50% { opacity: 0; } }
+
+  /* ── FOOTER ── */
+  footer {
+    text-align: center;
+    padding: 1.5rem 1rem;
+    font-family: 'Press Start 2P', monospace;
+    font-size: 0.45rem;
+    color: var(--muted);
+    letter-spacing: 0.1em;
+    line-height: 2;
+    border-top: 2px solid var(--border);
+    margin-top: 1.5rem;
+  }
+
+  @media (max-width: 600px) {
+    .result-table th { font-size: 0.35rem; padding: 0.5rem 0.35rem; }
+    .result-table td { font-size: 0.7rem;  padding: 0.5rem 0.35rem; }
+  }
+</style>
+</head>
+<body>
+
+<div id="xp-toast" class="xp-toast">+100 XP!</div>
+
+<div class="container">
+
+<!-- HEADER -->
+<header>
+  <div class="game-title">SUBNETTING <span class="accent">QUEST</span><span class="blink">_</span></div>
+  <div class="subtitle">// Guía Interactiva IPv4 · FLSM &amp; VLSM //</div>
+  <div class="xp-wrap">
+    <span class="xp-label">XP:</span>
+    <div class="xp-bar"><div class="xp-fill" id="xp-bar"></div></div>
+    <span class="xp-label" id="xp-label">25%</span>
+  </div>
+</header>
+
+<!-- NAV -->
+<nav>
+  <button class="nav-btn active" onclick="goStage('s0',this)">[ 0 ] BASES</button>
+  <button class="nav-btn"        onclick="goStage('s1',this)">[ 1 ] FLSM</button>
+  <button class="nav-btn"        onclick="goStage('s2',this)">[ 2 ] VLSM</button>
+  <button class="nav-btn gold-btn" onclick="goStage('s3',this)">[ ★ ] RESUMEN</button>
+</nav>
+
+<!-- ═══════════════ STAGE 0 · BASES ═══════════════ -->
+<section id="s0" class="stage active">
+
+  <div class="panel panel-indigo">
+    <div class="section-title indigo"><span>⚡</span> MÓDULO 0 · EL SECRETO DEL SISTEMA BINARIO</div>
+    <p class="body-text">
+      Toda la magia del subnetting se reduce a una sola base: el número <strong style="color:var(--indigo2)">2</strong>.
+      Las IPs IPv4 son 32 bits (unos y ceros). Si dominas las potencias de 2, nunca tendrás que memorizar tablas complejas.
+    </p>
+  </div>
+
+  <div class="grid-2">
+
+    <!-- Fórmulas -->
+    <div class="panel panel-purple">
+      <div class="section-title purple"><span>📜</span> FÓRMULAS DE ORO</div>
+
+      <div class="power-card" style="border-color:rgba(79,70,229,0.3); margin-bottom:0.75rem;">
+        <div class="badge badge-indigo" style="margin-bottom:0.5rem;">SUBREDES</div>
+        <div class="big-formula" style="color:var(--indigo2);">2<sup style="font-size:0.6em;">n</sup></div>
+        <p class="body-text" style="font-size:0.9rem;">
+          <strong style="color:var(--text)">n</strong> = bits "prestados" de la porción host.
+        </p>
+      </div>
+
+      <div class="power-card" style="border-color:rgba(190,24,93,0.3);">
+        <div class="badge badge-pink" style="margin-bottom:0.5rem;">HOSTS USABLES</div>
+        <div class="big-formula" style="color:var(--pink);">2<sup style="font-size:0.6em;">h</sup> − 2</div>
+        <p class="body-text" style="font-size:0.9rem;">
+          <strong style="color:var(--text)">h</strong> = bits restantes.
+          <span style="color:var(--pink2)">−2</span> por IP de Red y Broadcast.
+        </p>
+      </div>
+    </div>
+
+    <!-- Simulador -->
+    <div class="panel panel-cyan">
+      <div class="section-title cyan"><span>🎮</span> SIMULADOR · POTENCIAS DE 2</div>
+
+      <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:0.6rem;">
+        <span class="badge badge-cyan">BITS ASIGNADOS</span>
+        <span style="font-family:'Orbitron',sans-serif; font-size:2.2rem; font-weight:900; color:var(--indigo2);" id="bit-display">4</span>
+      </div>
+
+      <input type="range" id="pow-slider" min="1" max="12" value="4">
+
+      <div class="slider-display">
+        <div class="stat-box">
+          <span class="stat-label">VALOR BRUTO (2ⁿ)</span>
+          <span class="stat-value" style="color:var(--indigo2);" id="pow-raw">16</span>
+        </div>
+        <div class="stat-box" style="border-color:rgba(190,24,93,0.4);">
+          <span class="stat-label">HOSTS USABLES</span>
+          <span class="stat-value" style="color:var(--pink);" id="pow-hosts">14</span>
+        </div>
+      </div>
+
+      <div style="margin-top:0.9rem; background:var(--bg2); border-radius:5px; padding:0.8rem; border:1px solid var(--border);">
+        <div class="badge badge-gold" style="margin-bottom:0.4rem;">TABLA RÁPIDA</div>
+        <div class="powers-wrap">
+          <span class="ip-tag" style="font-size:0.75rem;">2¹=2</span>
+          <span class="ip-tag" style="font-size:0.75rem;">2²=4</span>
+          <span class="ip-tag" style="font-size:0.75rem;">2³=8</span>
+          <span class="ip-tag" style="font-size:0.75rem;">2⁴=16</span>
+          <span class="ip-tag" style="font-size:0.75rem;">2⁵=32</span>
+          <span class="ip-tag" style="font-size:0.75rem;">2⁶=64</span>
+          <span class="ip-tag" style="font-size:0.75rem;">2⁷=128</span>
+          <span class="ip-tag" style="font-size:0.75rem;">2⁸=256</span>
+          <span class="ip-tag" style="font-size:0.75rem;">2⁹=512</span>
+          <span class="ip-tag" style="font-size:0.75rem;">2¹⁰=1024</span>
+        </div>
+      </div>
+    </div>
+
+  </div>
+
+  <!-- Truco salto -->
+  <div class="panel panel-gold">
+    <div class="section-title gold"><span>🦘</span> EL TRUCO DEL SALTO DE RED</div>
+    <div class="grid-2">
+      <div>
+        <p class="body-text">Para saber de cuánto en cuánto "saltan" las subredes, usa esta fórmula rápida:</p>
+        <div class="big-formula" style="color:var(--gold2);">256 − M</div>
+        <p class="body-text" style="font-size:0.9rem; color:var(--muted);">
+          Donde <strong style="color:var(--text)">M</strong> = valor del octeto modificado en la máscara.
+        </p>
+      </div>
+      <div class="power-card" style="border-color:rgba(180,83,9,0.3);">
+        <div class="badge badge-gold" style="margin-bottom:0.6rem;">EJEMPLO</div>
+        <p class="body-text">Máscara <span class="ip-tag gold">/26</span> → último octeto = <strong style="color:var(--gold2)">192</strong></p>
+        <p class="body-text" style="margin-top:0.5rem;">Salto = 256 − 192 = <span style="font-family:'Orbitron',sans-serif; font-size:1.5rem; font-weight:900; color:var(--gold2);">64</span></p>
+        <p class="body-text" style="margin-top:0.35rem; color:var(--muted); font-size:0.88rem;">→ Redes avanzan de 64 en 64</p>
+      </div>
+    </div>
+  </div>
+
+</section>
+
+<!-- ═══════════════ STAGE 1 · FLSM ═══════════════ -->
+<section id="s1" class="stage">
+
+  <div class="panel panel-cyan">
+    <div class="quest-header">
+      <div>
+        <div class="section-title cyan"><span>📦</span> MISIÓN 1 · FLSM — TAMAÑO FIJO</div>
+        <p class="body-text">Todas las subredes se cortan del mismo tamaño. Simple, pero puede desperdiciar IPs.</p>
+      </div>
+      <button class="btn btn-reset" onclick="resetFLSM()">↻ REINICIAR</button>
+    </div>
+
+    <div class="problem-box cyan">
+      <div class="problem-title">▶ PLANTEAMIENTO</div>
+      <p class="body-text">
+        Dirección base: <span class="ip-tag">192.168.1.0/24</span>
+        <br style="margin:0.5rem;">
+        Dividir en exactamente <span class="ip-tag gold">4 subredes</span>
+      </p>
+    </div>
+
+    <!-- Step 1 -->
+    <div class="quest-step" id="flsm-s1">
+      <div class="step-header">
+        <div class="step-num">01</div>
+        <div>
+          <div class="step-title">ENCONTRAR LOS BITS (n)</div>
+          <p class="body-text" style="font-size:0.88rem; color:var(--muted); margin-top:0.3rem;">
+            ¿Qué valor de 2<sup>n</sup> es ≥ 4 redes?
+          </p>
+        </div>
+      </div>
+      <button class="btn btn-cyan" onclick="showFLSM(2)" id="flsm-btn1">▶ REVELAR CÁLCULO</button>
+      <div class="answer-box" id="flsm-a1">
+        <span class="answer-label">✓ RESULTADO</span>
+        <p class="answer-text">
+          2<sup>1</sup>=2 (insuficiente) &nbsp;·&nbsp;
+          <span style="color:var(--green); font-weight:bold;">2<sup>2</sup>=4 ✓</span>
+          <br>Necesitamos <span class="answer-highlight">n = 2 bits</span>
+        </p>
+      </div>
+    </div>
+
+    <!-- Step 2 -->
+    <div class="quest-step hidden-step" id="flsm-s2">
+      <div class="step-header">
+        <div class="step-num">02</div>
+        <div>
+          <div class="step-title">FORJAR LA NUEVA MÁSCARA</div>
+          <p class="body-text" style="font-size:0.88rem; color:var(--muted); margin-top:0.3rem;">/24 original + 2 bits prestados = ?</p>
+        </div>
+      </div>
+      <button class="btn btn-cyan" onclick="showFLSM(3)" id="flsm-btn2">▶ CALCULAR MÁSCARA</button>
+      <div class="answer-box" id="flsm-a2">
+        <span class="answer-label">✓ RESULTADO</span>
+        <p class="answer-text">
+          /24 + 2 = <span class="answer-highlight">/26</span>
+          <br>Último octeto: 128 + 64 = 192
+          <br>Máscara decimal: <span class="ip-tag green">255.255.255.192</span>
+        </p>
+      </div>
+    </div>
+
+    <!-- Step 3 -->
+    <div class="quest-step hidden-step" id="flsm-s3">
+      <div class="step-header">
+        <div class="step-num">03</div>
+        <div>
+          <div class="step-title">CALCULAR EL SALTO DE RED</div>
+          <p class="body-text" style="font-size:0.88rem; color:var(--muted); margin-top:0.3rem;">256 − (octeto modificado de máscara)</p>
+        </div>
+      </div>
+      <button class="btn btn-cyan" onclick="showFLSM(4)" id="flsm-btn3">▶ CALCULAR SALTO</button>
+      <div class="answer-box" id="flsm-a3">
+        <span class="answer-label">✓ RESULTADO</span>
+        <p class="answer-text">
+          256 − 192 = <span class="answer-highlight" style="color:var(--gold2);">64</span>
+          <br>Las subredes avanzan de <strong style="color:var(--gold2);">64 en 64</strong> en el último octeto.
+        </p>
+      </div>
+    </div>
+
+    <!-- Step 4 -->
+    <div class="quest-step hidden-step" id="flsm-s4">
+      <div class="step-header">
+        <div class="step-num gold">04</div>
+        <div>
+          <div class="step-title" style="color:var(--gold);">CONSTRUIR LA TABLA FINAL</div>
+          <p class="body-text" style="font-size:0.88rem; color:var(--muted); margin-top:0.3rem;">ID Red → +1 primera IP → +salto−2 última IP → +salto−1 broadcast</p>
+        </div>
+      </div>
+      <button class="btn btn-gold" onclick="showFLSM(5)" id="flsm-btn4">▶ VER TABLA FINAL</button>
+    </div>
+
+    <!-- Result FLSM -->
+    <div class="result-panel" id="flsm-table">
+      <div class="result-title">🏆 TABLA FLSM · 192.168.1.0/24 → 4×/26 🏆</div>
+      <div class="table-wrap">
+        <table class="result-table">
+          <thead>
+            <tr>
+              <th>ZONA</th>
+              <th>ID RED</th>
+              <th>1ra IP USABLE</th>
+              <th>ÚLTIMA IP USABLE</th>
+              <th>BROADCAST</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr>
+              <td class="td-zone">Red 1</td>
+              <td class="td-net">192.168.1.0</td>
+              <td>192.168.1.1</td>
+              <td>192.168.1.62</td>
+              <td class="td-bc">192.168.1.63</td>
+            </tr>
+            <tr>
+              <td class="td-zone">Red 2</td>
+              <td class="td-net">192.168.1.64</td>
+              <td>192.168.1.65</td>
+              <td>192.168.1.126</td>
+              <td class="td-bc">192.168.1.127</td>
+            </tr>
+            <tr>
+              <td class="td-zone">Red 3</td>
+              <td class="td-net">192.168.1.128</td>
+              <td>192.168.1.129</td>
+              <td>192.168.1.190</td>
+              <td class="td-bc">192.168.1.191</td>
+            </tr>
+            <tr>
+              <td class="td-zone">Red 4</td>
+              <td class="td-net">192.168.1.192</td>
+              <td>192.168.1.193</td>
+              <td>192.168.1.254</td>
+              <td class="td-bc">192.168.1.255</td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+      <div style="margin-top:0.9rem; display:flex; gap:0.6rem; flex-wrap:wrap;">
+        <span class="badge badge-cyan">MÁSCARA: /26</span>
+        <span class="badge badge-green">SALTO: +64</span>
+        <span class="badge badge-pink">62 HOSTS/RED</span>
+        <span class="badge badge-gold">4 REDES TOTAL</span>
+      </div>
+    </div>
+
+  </div>
+</section>
+
+<!-- ═══════════════ STAGE 2 · VLSM ═══════════════ -->
+<section id="s2" class="stage">
+
+  <div class="panel panel-pink">
+    <div class="quest-header">
+      <div>
+        <div class="section-title pink"><span>✂️</span> MISIÓN 2 · VLSM — A LA MEDIDA</div>
+        <p class="body-text">Cada subred se ajusta exactamente a lo que se necesita. Cero desperdicio de IPs.</p>
+      </div>
+      <button class="btn btn-reset" onclick="resetVLSM()">↻ REINICIAR</button>
+    </div>
+
+    <div class="problem-box pink">
+      <div class="problem-title">▶ PLANTEAMIENTO</div>
+      <p class="body-text">
+        Dirección base: <span class="ip-tag">172.16.0.0/16</span>
+      </p>
+      <div style="display:flex; gap:0.5rem; flex-wrap:wrap; margin-top:0.65rem;">
+        <span class="ip-tag pink">Red A: 500 hosts</span>
+        <span class="ip-tag pink">Red B: 2 hosts</span>
+        <span class="ip-tag pink">Red C: 1000 hosts</span>
+      </div>
+    </div>
+
+    <!-- Step 1: Ordenar -->
+    <div class="quest-step" style="border-color:var(--orange);" id="vlsm-s1">
+      <div class="step-header">
+        <div class="step-num orange">⚠</div>
+        <div>
+          <div class="step-title" style="color:var(--orange);">REGLA DE ORO — ORDENAR PRIMERO</div>
+        </div>
+      </div>
+      <div class="warning-panel">
+        <p class="body-text">
+          En VLSM es <strong style="color:var(--orange);">OBLIGATORIO</strong> ordenar de
+          <strong style="color:var(--text);">MAYOR a MENOR</strong> antes de calcular.
+          Si calculas en orden arbitrario, las IPs se solaparán y el ejercicio estará incorrecto.
+        </p>
+      </div>
+      <button class="btn btn-orange" onclick="showVLSM(2)" id="vlsm-btn1">▶ ORDENAR DE MAYOR A MENOR</button>
+      <div class="answer-box" id="vlsm-a1">
+        <span class="answer-label">✓ ORDEN ESTABLECIDO</span>
+        <div class="order-chain">
+          <div class="order-box">1000</div>
+          <span class="order-arrow">→</span>
+          <div class="order-box">500</div>
+          <span class="order-arrow">→</span>
+          <div class="order-box">2</div>
+        </div>
+        <p class="answer-text" style="color:var(--muted); font-size:0.88rem;">Calculamos en este orden exacto, uno tras otro.</p>
+      </div>
+    </div>
+
+    <!-- Step 2: 1000 hosts -->
+    <div class="quest-step hidden-step" id="vlsm-s2">
+      <div class="step-header">
+        <div class="step-num">02</div>
+        <div>
+          <div class="step-title">RED MÁS GRANDE · 1000 HOSTS</div>
+          <p class="body-text" style="font-size:0.88rem; color:var(--muted); margin-top:0.3rem;">Iniciamos en: <span class="ip-tag">172.16.0.0</span></p>
+        </div>
+      </div>
+      <button class="btn btn-cyan" onclick="showVLSM(3)" id="vlsm-btn2">▶ CALCULAR RED 1000</button>
+      <div class="answer-box" id="vlsm-a2">
+        <span class="answer-label">✓ PASO A PASO</span>
+        <div class="power-card">
+          <span style="color:var(--cyan2);">🔍 Bits (h):</span>
+          <span class="answer-text"> 2<sup>h</sup> − 2 ≥ 1000. 2<sup>10</sup>=1024 ✓ → <strong style="color:var(--green);">h = 10 bits</strong></span>
+        </div>
+        <div class="power-card">
+          <span style="color:var(--cyan2);">🛡 Máscara:</span>
+          <span class="answer-text"> 32 − 10 = <strong style="color:var(--pink2);">/22</strong> → 255.255.252.0</span>
+        </div>
+        <div class="power-card">
+          <span style="color:var(--cyan2);">🦘 Salto:</span>
+          <span class="answer-text"> 256 − 252 = <strong style="color:var(--gold2);">4</strong> (en el 3er octeto)</span>
+        </div>
+        <div style="background:rgba(22,163,74,0.08); border:2px solid var(--green2); border-radius:5px; padding:1rem; margin-top:0.5rem;">
+          <span class="answer-label">🏆 RESULTADO RED 1000</span>
+          <p class="answer-text">
+            ID Red: <span class="ip-tag">172.16.0.0/22</span><br>
+            Broadcast: <span class="ip-tag pink">172.16.3.255</span><br>
+            <span style="color:var(--muted); font-size:0.88rem;">→ Siguiente red empieza en: <span class="ip-tag" style="font-size:0.88rem;">172.16.4.0</span></span>
+          </p>
+        </div>
+      </div>
+    </div>
+
+    <!-- Step 3: 500 hosts -->
+    <div class="quest-step hidden-step" id="vlsm-s3">
+      <div class="step-header">
+        <div class="step-num">03</div>
+        <div>
+          <div class="step-title">RED MEDIANA · 500 HOSTS</div>
+          <p class="body-text" style="font-size:0.88rem; color:var(--muted); margin-top:0.3rem;">Continuamos en: <span class="ip-tag">172.16.4.0</span></p>
+        </div>
+      </div>
+      <button class="btn btn-cyan" onclick="showVLSM(4)" id="vlsm-btn3">▶ CALCULAR RED 500</button>
+      <div class="answer-box" id="vlsm-a3">
+        <span class="answer-label">✓ PASO A PASO</span>
+        <div class="power-card">
+          <span style="color:var(--cyan2);">🔍 Bits (h):</span>
+          <span class="answer-text"> 2<sup>h</sup> − 2 ≥ 500. 2<sup>9</sup>=512 ✓ → <strong style="color:var(--green);">h = 9 bits</strong></span>
+        </div>
+        <div class="power-card">
+          <span style="color:var(--cyan2);">🛡 Máscara:</span>
+          <span class="answer-text"> 32 − 9 = <strong style="color:var(--pink2);">/23</strong> → 255.255.254.0</span>
+        </div>
+        <div class="power-card">
+          <span style="color:var(--cyan2);">🦘 Salto:</span>
+          <span class="answer-text"> 256 − 254 = <strong style="color:var(--gold2);">2</strong> (en el 3er octeto)</span>
+        </div>
+        <div style="background:rgba(22,163,74,0.08); border:2px solid var(--green2); border-radius:5px; padding:1rem; margin-top:0.5rem;">
+          <span class="answer-label">🏆 RESULTADO RED 500</span>
+          <p class="answer-text">
+            ID Red: <span class="ip-tag">172.16.4.0/23</span><br>
+            Broadcast: <span class="ip-tag pink">172.16.5.255</span><br>
+            <span style="color:var(--muted); font-size:0.88rem;">→ Siguiente red empieza en: <span class="ip-tag" style="font-size:0.88rem;">172.16.6.0</span></span>
+          </p>
+        </div>
+      </div>
+    </div>
+
+    <!-- Step 4: 2 hosts -->
+    <div class="quest-step hidden-step" id="vlsm-s4">
+      <div class="step-header">
+        <div class="step-num gold">04</div>
+        <div>
+          <div class="step-title">RED PEQUEÑA · 2 HOSTS (ENLACE WAN)</div>
+          <p class="body-text" style="font-size:0.88rem; color:var(--muted); margin-top:0.3rem;">Continuamos en: <span class="ip-tag">172.16.6.0</span></p>
+        </div>
+      </div>
+      <button class="btn btn-cyan" onclick="showVLSM(5)" id="vlsm-btn4">▶ CALCULAR RED 2</button>
+      <div class="answer-box" id="vlsm-a4">
+        <span class="answer-label">✓ PASO A PASO</span>
+        <div class="power-card">
+          <span style="color:var(--cyan2);">🔍 Bits (h):</span>
+          <span class="answer-text"> 2<sup>h</sup> − 2 ≥ 2. 2<sup>2</sup>=4 ✓ → <strong style="color:var(--green);">h = 2 bits</strong></span>
+        </div>
+        <div class="power-card">
+          <span style="color:var(--cyan2);">🛡 Máscara:</span>
+          <span class="answer-text"> 32 − 2 = <strong style="color:var(--pink2);">/30</strong> → 255.255.255.252</span>
+        </div>
+        <div class="power-card">
+          <span style="color:var(--cyan2);">🦘 Salto:</span>
+          <span class="answer-text"> 256 − 252 = <strong style="color:var(--gold2);">4</strong> (en el 4to octeto)</span>
+        </div>
+        <div style="background:rgba(22,163,74,0.08); border:2px solid var(--green2); border-radius:5px; padding:1rem; margin-top:0.5rem;">
+          <span class="answer-label">🏆 RESULTADO RED 2</span>
+          <p class="answer-text">
+            ID Red: <span class="ip-tag">172.16.6.0/30</span><br>
+            Broadcast: <span class="ip-tag pink">172.16.6.3</span><br>
+            <span style="color:var(--green); font-weight:bold;">→ IPs usables: .1 y .2 — exactamente 2, sin desperdicio!</span>
+          </p>
+        </div>
+        <div style="text-align:center; margin-top:1rem;">
+          <button class="btn btn-gold" onclick="showVLSM(6)" id="vlsm-btn5">▶ VER TABLA MAESTRA VLSM</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- Result VLSM -->
+    <div class="result-panel" id="vlsm-table" style="border-color:var(--pink); box-shadow:0 4px 20px rgba(190,24,93,0.12);">
+      <div class="result-title" style="color:var(--pink);">🌟 TABLA MAESTRA VLSM · 172.16.0.0/16 🌟</div>
+      <p class="body-text" style="text-align:center; color:var(--muted); margin-bottom:1rem; font-size:0.88rem;">
+        Cada subred perfectamente ajustada — una tras otra, sin huecos.
+      </p>
+      <div class="table-wrap">
+        <table class="result-table">
+          <thead>
+            <tr>
+              <th>REQUERIMIENTO</th>
+              <th>ID DE RED</th>
+              <th>RANGO USABLE</th>
+              <th>BROADCAST</th>
+              <th>MÁSCARA</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr>
+              <td class="td-zone">1000 hosts (Red C)</td>
+              <td class="td-net">172.16.0.0</td>
+              <td>172.16.0.1 – 172.16.3.254</td>
+              <td class="td-bc">172.16.3.255</td>
+              <td class="td-mask">/22</td>
+            </tr>
+            <tr>
+              <td class="td-zone">500 hosts (Red A)</td>
+              <td class="td-net">172.16.4.0</td>
+              <td>172.16.4.1 – 172.16.5.254</td>
+              <td class="td-bc">172.16.5.255</td>
+              <td class="td-mask">/23</td>
+            </tr>
+            <tr>
+              <td class="td-zone">2 hosts (Red B)</td>
+              <td class="td-net">172.16.6.0</td>
+              <td>172.16.6.1 – 172.16.6.2</td>
+              <td class="td-bc">172.16.6.3</td>
+              <td class="td-mask">/30</td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+      <div style="margin-top:0.9rem; display:flex; gap:0.6rem; flex-wrap:wrap;">
+        <span class="badge badge-cyan">3 REDES</span>
+        <span class="badge badge-pink">EFICIENCIA: MÁXIMA</span>
+        <span class="badge badge-gold">MÁSCARAS: /22 /23 /30</span>
+        <span class="badge badge-green">DESPERDICIO: MÍNIMO</span>
+      </div>
+    </div>
+
+  </div>
+</section>
+
+<!-- ═══════════════ STAGE 3 · RESUMEN ═══════════════ -->
+<section id="s3" class="stage">
+
+  <div class="panel panel-gold">
+    <div class="section-title gold" style="justify-content:center; font-size:clamp(0.65rem,2.2vw,0.95rem);">
+      ★ RESUMEN★
+    </div>
+    <p class="body-text" style="text-align:center; color:var(--muted); margin-bottom:1.5rem;">
+      4 Puntos Importantes a tomar en cuenta.
+    </p>
+
+    <div class="grid-2">
+
+      <div class="pillar" style="border-color:var(--cyan);">
+        <div class="pillar-num" style="background:rgba(2,132,199,0.1); color:var(--cyan2); border-color:var(--cyan);">1</div>
+        <div class="pillar-h">La Gran Diferencia</div>
+        <p class="pillar-text">
+          <span class="badge badge-cyan">FLSM</span> Máscara fija. Corta pedazos iguales. Puede desperdiciar IPs.
+          <br><br>
+          <span class="badge badge-pink">VLSM</span> Máscara variable. Corta a la medida exacta. Optimiza el espacio al 100%.
+        </p>
+      </div>
+
+      <div class="pillar" style="border-color:var(--pink);">
+        <div class="pillar-num" style="background:rgba(190,24,93,0.1); color:var(--pink2); border-color:var(--pink);">2</div>
+        <div class="pillar-h">Hosts Usables</div>
+        <div class="formula-box" style="color:var(--pink);">2<sup style="font-size:0.6em;">h</sup> − 2</div>
+        <p class="pillar-text" style="text-align:center;">
+          Restamos 2: <strong>IP de Red</strong> y <strong>Broadcast</strong> no son asignables.
+        </p>
+      </div>
+
+      <div class="pillar" style="border-color:var(--green2);">
+        <div class="pillar-num" style="background:rgba(22,163,74,0.1); color:var(--green); border-color:var(--green2);">3</div>
+        <div class="pillar-h">El Truco del Salto</div>
+        <div class="formula-box" style="color:var(--gold2);">256 − M</div>
+        <p class="pillar-text" style="text-align:center;">
+          256 menos el octeto modificado de la máscara = salto entre redes consecutivas.
+        </p>
+      </div>
+
+      <div class="pillar" style="border-color:var(--orange); background:rgba(194,65,12,0.04);">
+        <div class="pillar-num" style="background:rgba(194,65,12,0.1); color:var(--orange); border-color:var(--orange);">4</div>
+        <div class="pillar-h" style="color:var(--orange);">Mandamiento VLSM</div>
+        <div style="background:rgba(194,65,12,0.07); border:2px solid var(--orange); border-radius:5px; padding:0.9rem; margin-top:0.5rem; text-align:center;">
+          <p class="pillar-text" style="color:var(--text);">
+            "Antes de calcular,<br>ordenar de <span style="color:var(--orange); text-decoration:underline; font-weight:bold;">MAYOR a MENOR</span>."
+          </p>
+        </div>
+      </div>
+
+    </div>
+
+    <!-- Cheat Sheet -->
+    <div style="margin-top:1.25rem; background:var(--bg2); border:2px solid var(--border2); border-radius:7px; padding:1.25rem;">
+      <div class="section-title cyan" style="font-size:clamp(0.52rem,1.7vw,0.72rem); margin-bottom:0.9rem;">
+        <span>⚡</span> CHEAT SHEET · BITS HOST → MÁSCARA
+      </div>
+      <div class="table-wrap">
+        <table class="result-table">
+          <thead>
+            <tr>
+              <th>BITS HOST (h)</th>
+              <th>CIDR</th>
+              <th>HOSTS USABLES</th>
+              <th>OCTETO MOD.</th>
+              <th>SALTO</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr><td>2</td><td class="td-mask">/30</td><td>2</td><td>252</td><td class="td-net">4</td></tr>
+            <tr><td>3</td><td class="td-mask">/29</td><td>6</td><td>248</td><td class="td-net">8</td></tr>
+            <tr><td>4</td><td class="td-mask">/28</td><td>14</td><td>240</td><td class="td-net">16</td></tr>
+            <tr><td>5</td><td class="td-mask">/27</td><td>30</td><td>224</td><td class="td-net">32</td></tr>
+            <tr><td>6</td><td class="td-mask">/26</td><td>62</td><td>192</td><td class="td-net">64</td></tr>
+            <tr><td>7</td><td class="td-mask">/25</td><td>126</td><td>128</td><td class="td-net">128</td></tr>
+            <tr><td>8</td><td class="td-mask">/24</td><td>254</td><td>— (255)</td><td class="td-net">1 en 3er oct.</td></tr>
+            <tr><td>9</td><td class="td-mask">/23</td><td>510</td><td>254</td><td class="td-net">2 en 3er oct.</td></tr>
+            <tr><td>10</td><td class="td-mask">/22</td><td>1022</td><td>252</td><td class="td-net">4 en 3er oct.</td></tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+
+  </div>
+
+</section>
+
+</div><!-- /container -->
+
+<footer>
+  SUBNETTING QUEST v3.0 · AYUDANTÍA DE SEBASTIÁN · ING. CIVIL INFORMÁTICA &amp; TELECOMUNICACIONES
+</footer>
+
+<script>
+  // ── NAVIGATION ──
+  function goStage(id, btn) {
+    document.querySelectorAll('.stage').forEach(s => s.classList.remove('active'));
+    document.querySelectorAll('.nav-btn').forEach(b => b.classList.remove('active'));
+    document.getElementById(id).classList.add('active');
+    btn.classList.add('active');
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+  }
+
+  // ── XP BAR ──
+  let xp = 25;
+  function gainXP(amount) {
+    xp = Math.min(100, xp + amount);
+    document.getElementById('xp-bar').style.width = xp + '%';
+    document.getElementById('xp-label').textContent = xp + '%';
+    const toast = document.getElementById('xp-toast');
+    toast.textContent = '+' + amount + ' XP!';
+    toast.classList.add('show');
+    setTimeout(() => toast.classList.remove('show'), 1800);
+  }
+
+  // ── POWER SLIDER ──
+  const slider = document.getElementById('pow-slider');
+  function updateSlider() {
+    const v = parseInt(slider.value);
+    document.getElementById('bit-display').textContent = v;
+    const raw = Math.pow(2, v);
+    document.getElementById('pow-raw').textContent = raw.toLocaleString();
+    document.getElementById('pow-hosts').textContent = raw > 2 ? (raw - 2).toLocaleString() : '0';
+  }
+  slider.addEventListener('input', updateSlider);
+
+  // ── FLSM ──
+  function showFLSM(next) {
+    const cur = next - 1;
+    const btn = document.getElementById('flsm-btn' + cur);
+    const ans = document.getElementById('flsm-a' + cur);
+    if (btn) btn.style.display = 'none';
+    if (ans) ans.classList.add('visible');
+
+    if (next <= 4) {
+      const step = document.getElementById('flsm-s' + next);
+      if (step) step.classList.add('revealed');
+    } else {
+      const table = document.getElementById('flsm-table');
+      if (table) table.classList.add('visible');
+    }
+    gainXP(next <= 4 ? 15 : 20);
+    setTimeout(() => window.scrollBy({ top: 180, behavior: 'smooth' }), 80);
+  }
+
+  function resetFLSM() {
+    for (let i = 2; i <= 4; i++) {
+      const s = document.getElementById('flsm-s' + i);
+      if (s) s.classList.remove('revealed');
+    }
+    for (let i = 1; i <= 4; i++) {
+      const btn = document.getElementById('flsm-btn' + i);
+      const ans = document.getElementById('flsm-a' + i);
+      if (btn) btn.style.display = '';
+      if (ans) ans.classList.remove('visible');
+    }
+    const t = document.getElementById('flsm-table');
+    if (t) t.classList.remove('visible');
+  }
+
+  // ── VLSM ──
+  function showVLSM(next) {
+    const cur = next - 1;
+    const btn = document.getElementById('vlsm-btn' + cur);
+    const ans = document.getElementById('vlsm-a' + cur);
+    if (btn) btn.style.display = 'none';
+    if (ans) ans.classList.add('visible');
+
+    if (next <= 5) {
+      const step = document.getElementById('vlsm-s' + next);
+      if (step) step.classList.add('revealed');
+    } else {
+      const table = document.getElementById('vlsm-table');
+      if (table) table.classList.add('visible');
+    }
+    gainXP(next <= 5 ? 15 : 25);
+    setTimeout(() => window.scrollBy({ top: 180, behavior: 'smooth' }), 80);
+  }
+
+  function resetVLSM() {
+    for (let i = 2; i <= 5; i++) {
+      const s = document.getElementById('vlsm-s' + i);
+      if (s) s.classList.remove('revealed');
+    }
+    for (let i = 1; i <= 5; i++) {
+      const btn = document.getElementById('vlsm-btn' + i);
+      const ans = document.getElementById('vlsm-a' + i);
+      if (btn) btn.style.display = '';
+      if (ans) ans.classList.remove('visible');
+    }
+    const t = document.getElementById('vlsm-table');
+    if (t) t.classList.remove('visible');
+  }
+</script>
+
+</body>
+</html>
